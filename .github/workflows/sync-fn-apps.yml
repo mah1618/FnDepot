@@ -1,0 +1,94 @@
+name: Sync Fn Apps
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # 每 12 小时执行
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository (use PAT)
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+
+      - name: Sync fpk assets
+        run: |
+          REPO="RROrg/fn-apps"
+
+          # 获取最新 release
+          API="https://api.github.com/repos/$REPO/releases/latest"
+          json=$(curl -s "$API")
+
+          # 下载所有 .fpk 资产
+          mkdir -p tmp-fpk
+          echo "$json" | jq -r '.assets[] | select(.name|endswith(".fpk")) | .browser_download_url' | while read url; do
+            name=$(basename "$url")
+            echo "Downloading $name"
+            curl -L -o "tmp-fpk/$name" "$url"
+          done
+
+          # 初始化配置文件
+          if [ ! -f fnpack.json ]; then
+            echo "{}" > fnpack.json
+          fi
+
+          # 处理每个 fpk 文件
+          for file in tmp-fpk/*.fpk; do
+            [ -e "$file" ] || continue
+
+            base=$(basename "$file" .fpk)
+
+            # 解析组件名和版本号（示例：fn-msedge_v1.0.1.fpk）
+            component=$(echo "$base" | sed -E 's/_v[0-9.]+$//')
+            upstream_ver=$(echo "$base" | sed -E 's/^.*_v([0-9.]+)$/\1/')
+
+            echo "Processing component: $component, version: $upstream_ver"
+
+            # 本地版本（为空时使用 0.0.0）
+            local_ver=$(jq -r --arg c "$component" '.[$c].version // "0.0.0"' fnpack.json)
+
+            highest=$(printf "%s\n%s" "$local_ver" "$upstream_ver" | sort -V | tail -n1)
+            if [ "$highest" != "$upstream_ver" ]; then
+              echo "Local version ($local_ver) >= upstream version ($upstream_ver) → skip"
+              continue
+            fi
+
+            echo "Updating component $component → version $upstream_ver"
+
+            # 创建目录，复制 fpk，文件名不带版本号
+            mkdir -p "$component"
+            cp "$file" "$component/$component.fpk"
+
+            # 自动计算 size（MB，保留 1 位小数）
+            size_bytes=$(stat -c%s "$component/$component.fpk")
+            size_mb=$(awk "BEGIN { printf \"%.1f\", $size_bytes/1024/1024 }")
+
+            # 更新 fnpack.json（version + size）
+            tmp=$(mktemp)
+            jq --arg c "$component" --arg v "$upstream_ver" --arg s "$size_mb" \
+               '.[$c].version=$v | .[$c].size=$s' fnpack.json > "$tmp"
+            mv "$tmp" fnpack.json
+
+            echo "Updated fnpack.json: $component version=$upstream_ver, size=${size_mb}MB"
+          done
+
+          rm -rf tmp-fpk
+
+      - name: Commit and Push changes (use PAT)
+        env:
+          PAT: ${{ secrets.PAT }}
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Auto sync fn-apps components"
+            git push https://x-access-token:${PAT}@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }}
+          else
+            echo "No changes"
+          fi
