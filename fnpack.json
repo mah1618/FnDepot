@@ -8,7 +8,10 @@
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/FnDepot/issues",
     "install_type": "系统空间",
-    "size": "0.1"
+    "size": "0.1",
+    "history": {
+      "v1.0.0": "初始版本"
+    }
   },
   "fn-open-vm-tools": {
     "display_name": "open-vm-tools",
@@ -19,7 +22,10 @@
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/FnDepot/issues",
     "install_type": "系统空间",
-    "size": "0.1"
+    "size": "0.1",
+    "history": {
+      "v1.0.0": "初始版本"
+    }
   },
   "fn-qemu-ga": {
     "display_name": "qemu-ga",
@@ -30,7 +36,10 @@
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/FnDepot/issues",
     "install_type": "系统空间",
-    "size": "0.1"
+    "size": "0.1",
+    "history": {
+      "v1.0.0": "初始版本"
+    }
   },
   "fn-scheduler": {
     "display_name": "任务计划",
@@ -41,18 +50,24 @@
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/FnDepot/issues",
     "install_type": "系统空间",
-    "size": "0.1"
+    "size": "0.1",
+    "history": {
+      "v1.0.0": "初始版本"
+    }
   },
   "fn-sshd-config": {
     "display_name": "sshd-config",
     "desc": "设置 root 用户密码，修改 SSHD 配置，卸载时还原配置。",
-    "labels": "SSH"
+    "labels": "SSH",
     "version": "1.0.0",
     "author": "RROrg",
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/FnDepot/issues",
     "install_type": "系统空间",
-    "size": "0.0"
+    "size": "0.0",
+    "history": {
+      "v1.0.0": "初始版本"
+    }
   },
   "fn-terminal": {
     "display_name": "terminal",
@@ -63,6 +78,9 @@
     "author_url": "https://github.com/RROrg/fn-apps",
     "bug_report_url": "https://github.com/RROrg/fn-apps/FnDepot/issues",
     "install_type": "系统空间",
-    "size": "0.0"
+    "size": "0.0",
+    "history": {
+      "v1.0.0": "初始版本"
+    }
   }
 }
