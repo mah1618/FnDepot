@@ -1,0 +1,293 @@
+mixed-port: 7890
+redir-port: 7892
+allow-lan: true
+bind-address: '*'
+mode: rule
+log-level: info
+ipv6: false
+external-controller: 0.0.0.0:9090
+
+# ================= DNS =================
+dns:
+  enable: true
+  listen: 0.0.0.0:7874
+  ipv6: false
+  enhanced-mode: redir-host
+  fake-ip-range: 198.18.0.1/16
+  use-hosts: true
+
+  nameserver:
+    - 127.0.0.1:1053
+
+  fallback:
+    - https://8.8.8.8/dns-query
+    - https://1.1.1.1/dns-query
+    - https://dns.quad9.net/dns-query
+
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+
+# ================= 节点（改名，避免冲突） =================
+proxies:
+  - name: JP-Node
+    type: vless
+    server: 154.83.94.158
+    port: 443
+    uuid: cbad8509-24a8-4253-81f6-049642a38f8e
+    network: tcp
+    udp: false
+    tls: true
+    servername: www.apple.com
+    reality-opts:
+      public-key: 2Yj98PHRZeSS2_zBa49KMG8x1-3sNgGfjP_y9P0f0Wo
+      short-id: "c6cc"
+    client-fingerprint: chrome
+
+  - name: DE-Node
+    type: vless
+    server: 156.226.174.40
+    port: 443
+    uuid: f38b2c53-ef92-46d8-b2db-6d89cd60c473
+    network: tcp
+    udp: false
+    tls: true
+    servername: www.intel.com
+    flow: ""
+    reality-opts:
+      public-key: yz_6OTvPmMIwMrbMEIlSA88xrhxFPGyHNivF6p-K7Us
+      short-id: "3bdf39"
+    client-fingerprint: chrome
+
+
+  - name: HK-Node
+    type: vless
+    server: 45.207.157.141
+    port: 443
+    uuid: 1ea1ff0c-878d-4bac-9c67-a05d290db37e
+    network: tcp
+    udp: false
+    tls: true
+    servername: www.nvidia.com
+    flow: ""
+    reality-opts:
+      public-key: Fc0ax_RJw4VZyBhnzzvIpVEj-0HdFtta5JE040kyfH4
+      short-id: "a4d2f29e"
+    client-fingerprint: chrome
+
+# ================= 代理组 =================
+proxy-groups:
+  - name: Auto
+    type: fallback
+    proxies:
+      - JP-Node
+      - DE-Node
+      - HK-Node
+    url: http://1.1.1.1/generate_204
+    interval: 300
+
+  - name: Japan
+    type: select
+    proxies:
+      - JP-Node
+
+  - name: Germany
+    type: select
+    proxies:
+      - DE-Node
+
+  - name: HongKong
+    type: select
+    proxies:
+      - HK-Node
+
+  - name: CN-Fallback
+    type: select
+    proxies:
+      - DIRECT
+      - HK-Node
+
+  - name: Switch
+    type: select
+    proxies:
+      - Auto
+      - Japan
+      - Germany
+      - HongKong
+      - DIRECT
+
+  - name: Netflix
+    type: select
+    proxies:
+      - Japan
+      - Germany
+
+  - name: Bahamut
+    type: select
+    proxies:
+      - HongKong
+      - Japan
+
+  - name: CN
+    type: select
+    proxies:
+      - DIRECT
+
+# ================= 规则 =================
+rules:
+  # Personal Define
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - DOMAIN,speed.cloudflare.com,CN
+  - DOMAIN-SUFFIX,test-ipv6.com,CN
+  # Unbreak
+  - RULE-SET,Unbreak,CN
+  # Apple
+  - RULE-SET,Apple,CN
+  # Microsoft
+  - RULE-SET,Microsoft,CN
+  # Nintendo
+  - RULE-SET,Nintendo,Switch
+  # Notion
+  - DOMAIN,http-inputs-notion.splunkcloud.com,Switch
+  - RULE-SET,Notion,Switch
+  # Steam
+  - DOMAIN-SUFFIX,steamcommunity.com,Switch
+  - DOMAIN,avatars.akamai.steamstatic.com,Switch
+  - DOMAIN,api.steampowered.com,Switch
+  - DOMAIN,store.steampowered.com,Switch
+  - RULE-SET,SteamCN,CN
+  # Telegram
+  - RULE-SET,Telegram,Switch
+  # Spotify
+  - DOMAIN,open.spotify.com,Switch
+  - DOMAIN-SUFFIX,akamaized.net,CN
+  - DOMAIN-SUFFIX,blog.cloudflare.com,CN
+  - DOMAIN-SUFFIX,developers.cloudflare.com,CN
+  - DOMAIN-SUFFIX,hostinger.com,CN
+  - DOMAIN-SUFFIX,ahrefs.com,CN
+  - DOMAIN-SUFFIX,spotify.com,CN
+  - DOMAIN-SUFFIX,spotifycdn.com,CN
+  - DOMAIN-SUFFIX,scdn.co,CN
+  - DOMAIN-SUFFIX,branch.io,CN
+  - RULE-SET,Spotify,CN
+  # Streaming
+  - DOMAIN,anime1.me,Switch
+  - DOMAIN-SUFFIX,anime1.me,CN
+  - RULE-SET,Netflix,Netflix
+  - RULE-SET,Bahamut,Bahamut
+  - RULE-SET,Streaming,Switch
+  # Global Domain
+  - DOMAIN-SUFFIX,imap.gmail.com,Switch # Gmail
+  - DOMAIN-SUFFIX,smtp.gmail.com,Switch # Gmail
+  # China Domain
+  - DOMAIN-SUFFIX,ua.233996.xyz,CN
+  - DOMAIN-SUFFIX,httpbin.org,CN
+  - DOMAIN-SUFFIX,ghproxy.com,CN
+  # Global SET
+  - RULE-SET,Global,Switch
+  # China SET
+  - RULE-SET,China,CN
+  #---!---DNS-Resolve---!--- #
+  #---!---DNS-Resolve---!--- #
+  #---!---DNS-Resolve---!--- #
+  # GeoIP China
+  # Local Area Network
+  - GEOIP,LAN,DIRECT
+
+  - DOMAIN-SUFFIX,qq.com,CN-Fallback
+  - DOMAIN-SUFFIX,weixin.qq.com,CN-Fallback
+  - DOMAIN-SUFFIX,wechat.com,CN-Fallback
+  - DOMAIN-SUFFIX,tencent.com,CN-Fallback
+  - DOMAIN-SUFFIX,gtimg.com,CN-Fallback
+
+  - DOMAIN-SUFFIX,douyin.com,CN-Fallback
+  - DOMAIN-SUFFIX,bytedance.com,CN-Fallback
+  - DOMAIN-SUFFIX,bytecdn.cn,CN-Fallback
+  - DOMAIN-SUFFIX,douyinpic.com,CN-Fallback
+
+  - GEOIP,CN,CN
+  - MATCH,Switch
+  
+  # 规则集
+rule-providers:
+  Unbreak:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Unbreak.yaml
+    url: https://cdn.jsdelivr.net/gh/DivineEngine/Profiles@master/Clash/RuleSet/Unbreak.yaml
+    interval: 86400
+  Apple:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Apple.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Apple/Apple.yaml
+    interval: 86400
+  Microsoft:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Microsoft.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Microsoft/Microsoft.yaml
+    interval: 86400
+  Nintendo:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Nintendo.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Nintendo/Nintendo.yaml
+    interval: 86400
+  Notion:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Notion.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Notion/Notion.yaml
+    interval: 86400
+  SteamCN:
+    type: http
+    behavior: classical
+    path: ./RuleSet/SteamCN.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/SteamCN/SteamCN.yaml
+    interval: 86400
+  Telegram:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Telegram.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Telegram/Telegram.yaml
+    interval: 86400
+  Spotify:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Spotify.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Spotify/Spotify.yaml
+    interval: 86400
+  Netflix:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Netflix.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Netflix/Netflix.yaml
+    interval: 86400
+  Bahamut:
+    type: http
+    behavior: classical
+    path: ./RuleSet/Bahamut.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Bahamut/Bahamut.yaml
+    interval: 86400
+  Streaming:
+    type: http
+    behavior: domain
+    path: ./RuleSet/Streaming.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/GlobalMedia/GlobalMedia_Domain.yaml
+    interval: 86400
+  Global:
+    type: http
+    behavior: domain
+    path: ./RuleSet/Global.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Global/Global_Domain.yaml
+    interval: 86400
+  China:
+    type: http
+    behavior: domain
+    path: ./RuleSet/China.yaml
+    url: https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/China/China_Domain.yaml
+    interval: 86400
+#--------------------------------------------------------------------------------------#
+parsers:
+#--------------------------------------------------------------------------------------#
